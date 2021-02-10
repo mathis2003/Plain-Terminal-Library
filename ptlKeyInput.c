@@ -50,7 +50,7 @@
 
 /* ----DATA---- */
 
-struct termios orig_termios;
+struct termios origTermios;
 
 enum keyCodes{
     
@@ -66,49 +66,48 @@ enum keyCodes{
 
 /* ----TERMINAL---- */
 
-void die(const char* s){
+void ptlDie(const char* s){
         perror(s);
         exit(1);
 }
 
 
-void disable_raw_mode(){
-        if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios) == -1)
-                die("tcsetattr");
+void ptlDisableRawMode(){
+        if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &origTermios) == -1) ptlDie("tcsetattr");
 }
 
-void enable_raw_mode(int update_time){
-        if(tcgetattr(STDIN_FILENO, &orig_termios) == -1) die("tcgetattr");
-        atexit(disable_raw_mode);
+void ptlEnableRawMode(int updateTime){
+        if(tcgetattr(STDIN_FILENO, &origTermios) == -1) ptlDie("tcgetattr");
+        atexit(ptlDisableRawMode);
 
-        struct termios raw = orig_termios;
+        struct termios raw = origTermios;
 
         raw.c_iflag &= ~(BRKINT| ICRNL| INPCK | ISTRIP | IXON);
         raw.c_oflag &= ~(OPOST);
         raw.c_cflag |= (CS8);
         raw.c_lflag &= ~(ECHO | ICANON | IEXTEN | ISIG);
         raw.c_cc[VMIN] = 0;
-        raw.c_cc[VTIME] = update_time;
+        raw.c_cc[VTIME] = updateTime;
 
-        if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw) == -1) die("tcsetattr");
+        if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw) == -1) ptlDie("tcsetattr");
         
 }
 
-int pressed_key(){
-    int key_code = '\0';
-    if (read(STDIN_FILENO, &key_code, 1) == -1 && errno != EAGAIN) die("read");
+int ptlPressedKey(){
+    int keyCode = '\0';
+    if (read(STDIN_FILENO, &keyCode, 1) == -1 && errno != EAGAIN) ptlDie("read");
     //if (iscntrl(key_code));
     printf("\r");
-    return key_code;
+    return keyCode;
 }
 
 /* ----INIT---- */
 
 int main(){
-    enable_raw_mode(10);
+    ptlEnableRawMode(10);
     
     while (1){
-        char c = pressed_key();
+        char c = ptlPressedKey();
         if (c != '\0'){
             PRINT_PRESSED_KEY(c)
         }
