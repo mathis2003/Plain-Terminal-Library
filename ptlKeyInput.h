@@ -1,13 +1,6 @@
-// Basically some boilerplate code which can enter raw mode in POSIX terminals.
-// Flags are set in enable_raw_mode()
-// original canonical mode and all the original flags are set with disable_raw_mode.
-// disable_raw_mode basically resets the terminal in a way
-//
-//
-//
 
-
-
+#ifndef PTL_KEY_INPUT_H
+#define PTL_KEY_INPUT_H
 
 
 /* ----INCLUDES---- */
@@ -97,29 +90,11 @@ int ptlPressedKey(){
     int keyCode = '\0';
     if (read(STDIN_FILENO, &keyCode, 1) == -1 && errno != EAGAIN) ptlDie("read");
     //if (iscntrl(key_code));
-    printf("\r");
     return keyCode;
 }
 
-/* ----INIT---- */
-
-int main(){
-    ptlEnableRawMode(10);
-    
-    while (1){
-        char c = ptlPressedKey();
-        if (c != '\0'){
-            PRINT_PRESSED_KEY(c)
-        }
-        
-        if (c == 'q') break;
-    }
-    
-    return 0;
-
-}
 
 
 
 
-
+#endif
