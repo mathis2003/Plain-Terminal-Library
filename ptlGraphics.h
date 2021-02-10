@@ -7,13 +7,16 @@
 #include <stdio.h>
 
 /* DEFINES */
-#if defined(unix) || defined(__unix) || defined(__unix__)
+#define CSI "\x1b["
 
-#define CLRSCREEN printf("\033[2J");
+
+#if defined(unix) || defined(__unix) || defined(__unix__) || defined(__APPLE__)
+
+#define CLEAR_SCREEN system("clear")
 
 #elif defined(_WIN32)
 
-#define CLRSCREEN CLS
+#define CLEAR_SCREEN system("CLS")
 
 #endif
 
@@ -30,6 +33,13 @@ typedef struct ptlRaster{
 } ptlRaster;
 
 /* ----drawing---- */
+
+
+void ptlClearScreen(){
+    printf("%s1;1f", CSI); //Set cursor position to 1,1 (0,0 doesn't exist </3 )
+    printf("%s1000X", CSI); //For the next 1000 positions, erase it.
+    printf("%s1;1f", CSI); //set the cursor BACK to position 1,1
+}
 
 void ptlInitRaster(ptlRaster* r, int width, int height, char bgChar) {
     r->width = width;
@@ -58,7 +68,7 @@ void ptlDrawLine(ptlRaster raster, ptlPixel startPixel, ptlPixel endPixel) {
 */
 
 void ptlRepaint(ptlRaster* raster) {
-    printf("\033[2J");
+    ptlClearScreen();
     
     for (int i = 0; i < raster->height; i++){
         printf("\r\n");

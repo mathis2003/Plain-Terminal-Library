@@ -2,6 +2,7 @@
 #include "ptlGraphics.h"
 
 int main(){
+    CLEAR_SCREEN;
     int inputUpdateTime = 2;
     ptlEnableRawMode(inputUpdateTime);
     
