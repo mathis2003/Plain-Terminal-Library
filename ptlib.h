@@ -12,6 +12,30 @@ void ptlDie(const char* s){
 }
 
 
+char* itoa(int value, char* result, int base) {
+    // check that the base if valid
+    if (base < 2 || base > 36) { *result = '\0'; return result; }
+
+    char* ptr = result, *ptr1 = result, tmp_char;
+    int tmp_value;
+
+    do {
+        tmp_value = value;
+        value /= base;
+        *ptr++ = "zyxwvutsrqponmlkjihgfedcba9876543210123456789abcdefghijklmnopqrstuvwxyz" [35 + (tmp_value - value * base)];
+    } while ( value );
+
+    // Apply negative sign
+    if (tmp_value < 0) *ptr++ = '-';
+    *ptr-- = '\0';
+    while(ptr1 < ptr) {
+        tmp_char = *ptr;
+        *ptr--= *ptr1;
+        *ptr1++ = tmp_char;
+    }
+    return result;
+}
+
 
 
 /* ---------------------------GRAPHICS--------------------------- */
@@ -79,19 +103,27 @@ void ptlDrawText(ptlRaster* raster, int x, int y, char* text){
 }
 
 void ptlDrawPixel(ptlRaster* raster, char pixelChar, int x, int y) {
-    if (x * y >= raster->width * raster->height) ptlDie("index out of bounds when calling ptlDrawPixel()");
+    if (x + y * raster->width > raster->width * raster->height){
+        printf("y: %d\n", y);
+        printf("x: %d", x);
+        
+        ptlDie("index out of bounds when calling ptlDrawPixel()");
+    }
+        
     raster->pixels[y * raster->width + x] = pixelChar;
 }
 
 void ptlRemovePixel(ptlRaster* raster, int x, int y) {
-    if (x * y >= raster->width * raster->height) ptlDie("index out of bounds when calling ptlRemovePixel()");
+    if (x + y * raster->width >= raster->width * raster->height)
+        ptlDie("index out of bounds when calling ptlRemovePixel()");
+    
     raster->pixels[y * raster->width + x] = raster->bgChar;
 }
 
 
 void ptlDrawLine(ptlRaster* raster, char pixelChar, int start_x, int start_y, int end_x, int end_y) {
-    if ((start_y * raster->width + start_x >= raster->width * raster->height) ||
-        (end_y * raster->width + end_x >= raster->width * raster->height)) ptlDie("index out of bounds when calling ptlDrawLine()");
+    if ((start_y * raster->width + start_x > raster->width * raster->height) ||
+        (end_y * raster->width + end_x > raster->width * raster->height)) ptlDie("index out of bounds when calling ptlDrawLine()");
     
     
     
