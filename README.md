@@ -37,7 +37,7 @@ void ptlInitRaster(ptlRaster* r, int width, int height, char bgChar)
 
 then there are multiple drawing functions which you use to modify the pixels in the raster:
 
-````
+```
 void ptlDrawText(ptlRaster* raster, int x, int y, char* text)
 
 void ptlDrawPixel(ptlRaster* raster, char pixelChar, int x, int y)
