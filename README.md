@@ -70,5 +70,6 @@ this returns an integer, which you can then compare with an enum element, like t
 int pressed_key = ptlPressedKey();
 if (pressed_key == KEYCODE_Q) {
     // do whatever here
-}```
+}
+```
 
