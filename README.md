@@ -25,7 +25,7 @@ typedef struct ptlRaster{
     char* pixels;
 } ptlRaster;
 ```
-
+the first struct is optional, you don't need it, but sometimes you might want to pack your pixel data together.
 After you've created a raster struct, you immediately wanna initialize it with this function:
 ```
 void ptlInitRaster(ptlRaster* r, int width, int height, char bgChar)
