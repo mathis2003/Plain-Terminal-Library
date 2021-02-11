@@ -53,7 +53,7 @@ void ptlDrawRect(ptlRaster* raster, char pixelChar, int width, int height, int x
 
 
 
-and finally there's repaint, which basically draws your updated raster to the screen:
+#and finally there's repaint, which basically draws your updated raster to the screen:
 
 ```
 void ptlRepaint(ptlRaster* raster)
