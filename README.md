@@ -59,3 +59,16 @@ void ptlDrawRect(ptlRaster* raster, char pixelChar, int width, int height, int x
 void ptlRepaint(ptlRaster* raster)
 ```
 
+---------------INPUT---------------
+
+Input is very simple, you have only one function really:
+
+```int ptlPressedKey()```
+
+this returns an integer, which you can then compare with an enum element, like this:
+```
+int pressed_key = ptlPressedKey();
+if (pressed_key == KEYCODE_Q) {
+    // do whatever here
+}```
+
