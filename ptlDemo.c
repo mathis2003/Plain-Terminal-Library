@@ -13,7 +13,7 @@ int main(){
     ptlInitRaster(r_ptr, 25, 20, '.');
     
     //ptlDrawText(r_ptr, 2, 2, "hey, Did you know that I am very smart? no? oh boy that's a shame!");
-    ptlDrawLine(r_ptr,'o', 0, 0, 16, 16);
+    ptlDrawRect(r_ptr,'o', 4, 6, 1, 1);
     
     int i = 0;
     while (1){

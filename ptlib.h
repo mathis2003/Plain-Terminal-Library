@@ -6,8 +6,9 @@
 
 
 void ptlDie(const char* s){
-        perror(s);
-        exit(1);
+    printf("\n\r");
+    perror(s);
+    exit(1);
 }
 
 
@@ -138,6 +139,15 @@ void ptlDrawLine(ptlRaster* raster, char pixelChar, int start_x, int start_y, in
             }
         }
     }
+}
+
+
+
+void ptlDrawRect(ptlRaster* raster, char pixelChar, int width, int height, int x, int y){
+    ptlDrawLine(raster, pixelChar, x, y, x + width, y);
+    ptlDrawLine(raster, pixelChar, x, y, x, y + height);
+    ptlDrawLine(raster, pixelChar, x + width, y, x + width, y + height);
+    ptlDrawLine(raster, pixelChar, x, y + height - 1, x + width, y + height - 1);
 }
 
 
