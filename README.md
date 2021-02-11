@@ -47,6 +47,7 @@ void ptlRemovePixel(ptlRaster* raster, int x, int y)
 void ptlDrawLine(ptlRaster* raster, char pixelChar, int start_x, int start_y, int end_x, int end_y)
 
 void ptlDrawRect(ptlRaster* raster, char pixelChar, int width, int height, int x, int y)
+
 ```
 
 
