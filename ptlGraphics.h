@@ -29,7 +29,7 @@ typedef struct ptlPixel{
 typedef struct ptlRaster{
     int width, height;
     char bgChar;
-    struct ptlPixel* pixels;
+    char* pixels;
 } ptlRaster;
 
 /* ----drawing---- */
@@ -45,20 +45,25 @@ void ptlInitRaster(ptlRaster* r, int width, int height, char bgChar) {
     r->width = width;
     r->height = height;
     r->bgChar = bgChar;
-    r->pixels = malloc(width * height * sizeof(struct ptlPixel));
+    r->pixels = malloc(width * height * sizeof(char));
+    
     for (int i = 0; i < width * height; i++){
-        r->pixels[i].x = i % width;
-        r->pixels[i].y = (i - r->pixels[i].x) / width;
-        r->pixels[i].pixelChar = bgChar;
+        r->pixels[i] = bgChar;
     }
 }
 
-void ptlDrawPixel(ptlRaster* raster, struct ptlPixel pixel) {
-    raster->pixels[pixel.y * raster->width + pixel.x] = pixel;
+void ptlDrawText(ptlRaster* raster, int x, int y, char* text){
+    for (int i = 0; text[i] != '\0'; i++){
+        raster->pixels[y * raster->width + x + i] = text[i];
+    }
 }
 
-void ptlRemovePixel(ptlRaster* raster, struct ptlPixel pixel) {
-    raster->pixels[pixel.y * raster->width + pixel.x].pixelChar = raster->bgChar;
+void ptlDrawPixel(ptlRaster* raster, char pixelChar, int x, int y) {
+    raster->pixels[y * raster->width + x] = pixelChar;
+}
+
+void ptlRemovePixel(ptlRaster* raster, int x, int y) {
+    raster->pixels[y * raster->width + x] = raster->bgChar;
 }
 
 /*
@@ -73,7 +78,7 @@ void ptlRepaint(ptlRaster* raster) {
     for (int i = 0; i < raster->height; i++){
         printf("\r\n");
         for (int j = 0; j < raster->width; j++){
-            printf("%c", raster->pixels[i * raster->width + j].pixelChar);
+            printf("%c", raster->pixels[i * raster->width + j]);
         }
     }
 
