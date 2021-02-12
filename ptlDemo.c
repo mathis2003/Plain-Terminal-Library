@@ -50,6 +50,12 @@ int main(){
     for (int i = 0; i < snake.amount_of_pixels; i++)
         ptlDrawPixel(&screen, snake.pixels[i].pixelChar, snake.pixels[i].x, snake.pixels[i].y);
     
+    for (int i = 0; i < 5; i++){
+        for (int j = 0; j < screen.width; j++){
+            ptlDrawPixel(&screen, ' ', j, i);
+        }
+    }
+    
     ptlDrawLine(&screen, '_', 0, 0, screen.width, 0);
     ptlDrawLine(&screen, '_', 0, 4, screen.width, 4);
     ptlDrawLine(&screen, '_', 1, screen.height - 1, screen.width - 1, screen.height - 1);
@@ -59,8 +65,8 @@ int main(){
     ptlDrawPixel(&screen, '*', screen.width - 1, screen.height-1);
     ptlDrawPixel(&screen, '*', 0, screen.height-1);
     
-    ptlDrawText(&screen, (int)(screen.width/2)- 3, 1, "SNAKE");
-    ptlDrawText(&screen, 1, 2, "HighScore:");
+    ptlDrawText(&screen, (int)(screen.width/2)- 8, 1, "----SNAKE----");
+    //ptlDrawText(&screen, 1, 2, "HighScore:");
     ptlDrawText(&screen, 1, 3, "Score:");
     
     snake.direction = DIR_UP;
@@ -122,22 +128,24 @@ int main(){
             
             if (snake.pixels[0].x == food.x && snake.pixels[0].y == food.y){
                 // snake ate food
-                 /*
+                 
                 snake.amount_of_pixels++;
-                snake.pixels = realloc(snake.pixels, snake.amount_of_pixels);
+                snake.pixels = realloc(snake.pixels, snake.amount_of_pixels * sizeof(struct ptlPixel));
                 snake.pixels[snake.amount_of_pixels - 1].pixelChar = 'O';
-                */
+                
                 int rand_x = 5;
                 int rand_y = 10;
                 int place_taken = 0;
                 
                 do {
-                    rand_x = rand() % screen.width;
-                    rand_y = rand() % screen.height;
-                    if (rand_x <= 0) rand_x++;
-                    else if (rand_x > screen.width) rand_x -= screen.width;
-                    if (rand_y > screen.height) rand_y -= screen.height;
-                    if (rand_y < 5) rand_y += 5;
+                    rand_x = rand() % screen.width - 1;
+                    rand_y = rand() % screen.height - 1;
+                    if (rand_x <= 0) rand_x+= 3;
+                    else if (rand_x > screen.width - 1) rand_x -= (int)(screen.width/2);
+                    if (rand_y >= screen.height) rand_y -= (int)(screen.height/2);
+                    if (rand_y <= 5) rand_y += (int)(screen.height/2);
+                    
+                    int place_taken = 0;
                     
                     for (int i = 0; i < snake.amount_of_pixels - 1; i++){
                         if (rand_x == snake.pixels[i].x && rand_y == snake.pixels[i].y) {
@@ -185,8 +193,10 @@ int main(){
             
             //check for collision
             for (int i = 1; i < snake.amount_of_pixels; i++){
-                if (snake.pixels[i].x == snake.pixels[0].x && snake.pixels[i].y == snake.pixels[0].y)
+                if (snake.pixels[i].x == snake.pixels[0].x && snake.pixels[i].y == snake.pixels[0].y){
                     is_running = 0;
+                    ptlDrawPixel(&screen, 'X', snake.pixels[0].x, snake.pixels[0].y);
+                }
             }
             
             
