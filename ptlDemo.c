@@ -91,7 +91,7 @@ int main(){
 
 
     while (is_running) {
-        ptlPollEvents(screen);
+        //ptlPollEvents(screen);
 
 
         int pressed_key = ptlPressedKey(screen);
@@ -203,10 +203,8 @@ int main(){
             ptlRepaint(screen);
 
         }
-
     }
  
-    
     ptlEndProgram(screen);
     
     return 0;
