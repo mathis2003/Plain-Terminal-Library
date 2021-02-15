@@ -43,6 +43,7 @@ void ptlDrawLine(ptlRaster raster, char pixelChar, int start_x, int start_y, int
 void ptlDrawRect(ptlRaster raster, char pixelChar, int width, int height, int x, int y);
 void ptlRepaint(ptlRaster raster);
 void ptlPollEvents(ptlRaster raster);
+void* ptlSetKeys(void* raster);
 int ptlPressedKey(ptlRaster raster);
 int ptlGetWidth(ptlRaster raster);
 int ptlGetHeight(ptlRaster raster);
@@ -94,9 +95,11 @@ char* _itoa(int value, char* result, int base) {
 #include <stdlib.h>
 #include <termios.h>
 #include <unistd.h>
+#include <pthread.h>
 
 /* ----functions---- */
 
+void ptlPollEvents(ptlRaster raster){ return; }
 
 
 void ptlClearScreen(){
@@ -109,6 +112,8 @@ void ptlClearScreen(){
 typedef struct ptlRaster_UNIX {
     struct termios origTermios;
     int pressed;
+    int checkKeys;
+    pthread_t inputThread;
     int width, height;
     char bgChar;
     char* pixels;
@@ -124,19 +129,31 @@ void ptlEnableRawMode(struct termios* t){
     raw.c_oflag &= ~(OPOST);
     raw.c_cflag |= (CS8);
     raw.c_lflag &= ~(ECHO | ICANON | IEXTEN | ISIG);
-    raw.c_cc[VMIN] = 0;
+    raw.c_cc[VMIN] = 1;
     raw.c_cc[VTIME] = 0;
     
-    HIDE_CURSOR;
     if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw) == -1) ptlDie("tcsetattr");
         
 }
+    
 
+void* ptlSetKeys(void* raster) {
+    ptlRaster_UNIX* r = (ptlRaster_UNIX*)raster;
+    while (r->checkKeys){
+        int keyCode = '\0';
+        if (read(STDIN_FILENO, &keyCode, 1) == -1 && errno != EAGAIN) ptlDie("read");
+        //if (iscntrl(key_code));
+        r->pressed = keyCode;
+    }
+    return NULL;
+}
 
 ptlRaster ptlInitRaster(int width, int height, char bgChar) {
     ptlRaster_UNIX* r = malloc(sizeof(ptlRaster_UNIX));
     if(tcgetattr(STDIN_FILENO, &(r->origTermios)) == -1) ptlDie("tcgetattr");
     r->pressed = '\0';
+    r->checkKeys = 1;
+    pthread_create(&(r->inputThread), NULL, ptlSetKeys, r);
     r->width = width;
     r->height = height;
     r->bgChar = bgChar;
@@ -159,19 +176,24 @@ void ptlDisableRawMode(struct termios* t){
 
 void ptlEndProgram(ptlRaster raster) {
     ptlRaster_UNIX* r = (ptlRaster_UNIX*)raster;
+    r->checkKeys = 0;
+    
+    struct termios t;
+    if(tcgetattr(STDIN_FILENO, &t) == -1) ptlDie("tcgetattr");
+    t.c_cc[VMIN] = 0;
+    if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &t) == -1) ptlDie("tcsetattr");
+    
+    pthread_join(r->inputThread, NULL);
+    
     ptlDisableRawMode(&(r->origTermios));
+    
     free(r->pixels);
     free(r);
+    CLEAR_SCREEN;
 }
 
 
-void ptlPollEvents(ptlRaster raster) {
-    ptlRaster_UNIX* r = (ptlRaster_UNIX*)raster;
-    int keyCode = '\0';
-    if (read(STDIN_FILENO, &keyCode, 1) == -1 && errno != EAGAIN) ptlDie("read");
-    //if (iscntrl(key_code));
-    r->pressed = keyCode;
-}
+
 
 int ptlPressedKey(ptlRaster raster){
     ptlRaster_UNIX* r = (ptlRaster_UNIX*)raster;
@@ -269,12 +291,22 @@ void ptlDrawLine(ptlRaster raster, char pixelChar, int start_x, int start_y, int
 }
 
 
+
 void ptlDrawRect(ptlRaster raster, char pixelChar, int width, int height, int x, int y) {
     ptlDrawLine(raster, pixelChar, x, y, x + width, y);
     ptlDrawLine(raster, pixelChar, x, y, x, y + height);
     ptlDrawLine(raster, pixelChar, x + width, y, x + width, y + height);
     ptlDrawLine(raster, pixelChar, x, y + height - 1, x + width, y + height - 1);
 }
+
+
+
+
+
+
+
+
+
 
 
 void ptlRepaint(ptlRaster raster) {
@@ -293,6 +325,18 @@ void ptlRepaint(ptlRaster raster) {
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 int ptlGetWidth(ptlRaster raster) {
     ptlRaster_UNIX* r = (ptlRaster_UNIX*)raster;
     return r->width;
@@ -302,6 +346,14 @@ int ptlGetHeight(ptlRaster raster) {
     ptlRaster_UNIX* r = (ptlRaster_UNIX*)raster;
     return r->height;
 }
+
+
+
+
+
+
+
+
 
 
 
@@ -528,3 +580,4 @@ int ptlGetHeight(ptlRaster raster) {
 #endif
 
 #endif
+
