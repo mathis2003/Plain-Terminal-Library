@@ -1,8 +1,11 @@
 #ifndef PTLIB_H
 #define PTLIB_H
+
 #include <stdio.h>
 #include <stdlib.h>
 
+#define HIDE_CURSOR printf("\x1b[?25l")
+#define SHOW_CURSOR printf("\x1b[?25h")
 
 
 enum keyCodes {
@@ -104,6 +107,8 @@ ptlRaster ptlInitRaster(int width, int height, char bgChar) {
     ptlEnableRawMode(&(r->origTermios));
 
     CLEAR_SCREEN;
+    HIDE_CURSOR;
+    
     for (int i = 0; i < width * height; i++)
         r->pixels[i] = bgChar;
 
@@ -119,10 +124,11 @@ void ptlDestroyRaster(ptlRaster raster) {
     ptlRaster_UNIX* r = (ptlRaster_UNIX*)raster;
 
     ptlDisableRawMode(&(r->origTermios));
-
+    
     free(r->pixels);
     free(r);
     CLEAR_SCREEN;
+    SHOW_CURSOR;
 }
 
 int ptlPressedKey(ptlRaster raster) {
@@ -295,7 +301,7 @@ ptlRaster ptlInitRaster(int width, int height, char bgChar) {
     if (!SetConsoleMode(r->out, mode)) ptlDie("Could not initialize PTL");
 
     system("CLS");
-    printf("\x1b[?25l");
+    HIDE_CURSOR;
 
     for (int i = 0; i < width * height; i++)
         r->pixels[i] = bgChar;
@@ -313,6 +319,10 @@ void ptlClearScreen(ptlRaster raster) {
 void ptlDestroyRaster(ptlRaster raster) {
     ptlRaster_Win32* r = (ptlRaster_Win32*)raster;
     SetConsoleMode(r->out, r->original_mode);
+    
+    CLEAR_SCREEN;
+    SHOW_CURSOR;
+    
     free(r->pixels);
     free(r);
 }
