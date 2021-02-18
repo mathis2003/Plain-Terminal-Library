@@ -31,7 +31,7 @@ int main(){
 
     int score = 0, high_score = 0;
 
-    float msec = 0, speed = 500;
+    float msec = 0, speed = 1;
 
     int is_running = 1;
 
@@ -91,7 +91,6 @@ int main(){
 
 
     while (is_running) {
-        //ptlPollEvents(screen);
 
 
         int pressed_key = ptlPressedKey(screen);
@@ -114,10 +113,10 @@ int main(){
         clock_t difference = clock() - prev_time;
         msec = difference * 1000 / CLOCKS_PER_SEC;
 
-        if (msec > speed) {
+        if (msec > 1000/speed) {
 
             prev_time = clock();
-            speed -= 1;
+            speed += 0.1;
             score += 1;
             char score_text[20];
             _itoa(score, score_text, 10);
@@ -205,9 +204,9 @@ int main(){
         }
     }
  
-    ptlEndProgram(screen);
+    ptlDestroyRaster(screen);
+    
     
     return 0;
 
 }
-
