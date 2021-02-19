@@ -19,7 +19,7 @@ int main(){
         ptlRepaint(screen1);
     }
     
-    /* ---- DESTROY FIRST SCREEN---- */
+    /* ----DESTROY FIRST SCREEN---- */
     ptlDestroyRaster(screen1);
     
     
@@ -41,7 +41,7 @@ int main(){
         ptlRepaint(screen2);
     }
     
-    /* ---- DESTROY SECOND SCREEN---- */
+    /* ----DESTROY SECOND SCREEN---- */
     ptlDestroyRaster(screen2);
     
     
