@@ -1,33 +1,49 @@
-
 #define PTLIB_IMPL
 #include "ptlib.h"
 
 int main(){
-    /* ----variables---- */
-    ptlRaster screen;
-    screen = ptlInitRaster(15, 10, '.');
     
-    ptlDrawPixel(screen, '#', 5, 5);
-    ptlRemovePixel(screen, 5, 5);
+    /* ----INITIALIZE FIRST SCREEN---- */
+    ptlRaster screen1;
+    screen1 = ptlInitRaster(25, 20, '.');
     
-    /* ----game loop---- */
+    ptlDrawText(screen1, 5, 7, "Hello from screen 1");
+    
     while (1){
-        // ALWAYS make sure you call ptlPressedKey() only ONCE each iteration, and store its return value in an integer
-        int keyCode = ptlPressedKey(screen);
+        // ALWAYS STORE THE RETURN VALUE OF ptlPressedKey() IN AN INTEGER, AND THEN NEVER CALL ptlPressedKey again in this scope
+        int keyPressed = ptlPressedKey(screen1);
         
+        if (keyPressed == KEYCODE_P) ptlDrawPixel(screen1, '#', 4, 5);
+        else if (keyPressed == KEYCODE_Q) break;
         
-        if (keyCode == KEYCODE_Q) break;
-        
-            
-            
-        
-        
-        // paints the (un)modified version of the raster
-        ptlRepaint(screen);
+        ptlRepaint(screen1);
     }
     
-    // ALWAYS destroy the raster before finishing the program
-    ptlDestroyRaster(screen);
+    /* ---- DESTROY FIRST SCREEN---- */
+    ptlDestroyRaster(screen1);
+    
+    
+    
+    
+    /* ----INITIALIZE SECOND SCREEN---- */
+    ptlRaster screen2;
+    screen2 = ptlInitRaster(15, 10, '+');
+    
+    ptlDrawText(screen2, 5, 7, "Hello from screen 2");
+    
+    while (1){
+        // ALWAYS STORE THE RETURN VALUE OF ptlPressedKey() IN AN INTEGER, AND THEN NEVER CALL ptlPressedKey again in this scope
+        int keyPressed = ptlPressedKey(screen2);
+        
+        if (keyPressed == KEYCODE_L) ptlDrawLine(screen2, '#', 1, 2, 7, 6);
+        else if (keyPressed == KEYCODE_Q) break;
+        
+        ptlRepaint(screen2);
+    }
+    
+    /* ---- DESTROY SECOND SCREEN---- */
+    ptlDestroyRaster(screen2);
+    
     
     return 0;
 }
