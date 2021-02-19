@@ -10,7 +10,7 @@ int main(){
     ptlDrawText(screen1, 5, 7, "Hello from screen 1");
     
     while (1){
-        // ALWAYS STORE THE RETURN VALUE OF ptlPressedKey() IN AN INTEGER, AND THEN NEVER CALL ptlPressedKey again in this scope
+        // ALWAYS store the return value of ptlPressedKey() in an integer, and then never call ptlPressedKey again in this scope
         int keyPressed = ptlPressedKey(screen1);
         
         if (keyPressed == KEYCODE_P) ptlDrawPixel(screen1, '#', 4, 5);
@@ -32,7 +32,7 @@ int main(){
     ptlDrawText(screen2, 5, 7, "Hello from screen 2");
     
     while (1){
-        // ALWAYS STORE THE RETURN VALUE OF ptlPressedKey() IN AN INTEGER, AND THEN NEVER CALL ptlPressedKey again in this scope
+        // ALWAYS store the return value of ptlPressedKey() in an integer, and then never call ptlPressedKey again in this scope
         int keyPressed = ptlPressedKey(screen2);
         
         if (keyPressed == KEYCODE_L) ptlDrawLine(screen2, '#', 1, 2, 7, 6);
