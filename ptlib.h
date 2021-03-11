@@ -134,10 +134,12 @@ void ptlDestroyRaster(ptlRaster raster) {
 int ptlPressedKey(ptlRaster raster) {
     ptlRaster_UNIX* r = (ptlRaster_UNIX*)raster;
     int keyCode = '\0';
+    
     if (read(STDIN_FILENO, &keyCode, 1) == -1 && errno != EAGAIN) {
         ptlDisableRawMode(&(r->origTermios));
         ptlDie("read");
     }
+    
     if (keyCode == '['){
         if (read(STDIN_FILENO, &keyCode, 1) == -1 && errno != EAGAIN) { ptlDie("read"); }
         if (keyCode == 'A') keyCode = KEYCODE_UP_ARROW;
@@ -145,7 +147,7 @@ int ptlPressedKey(ptlRaster raster) {
         else if (keyCode == 'C') keyCode = KEYCODE_RIGHT_ARROW;
         else if (keyCode == 'D') keyCode = KEYCODE_LEFT_ARROW;
     }
-    //if (iscntrl(keyCode)) printf("%c\n", keyCode);
+    
     return keyCode;
 }
 
