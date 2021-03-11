@@ -116,7 +116,7 @@ ptlRaster ptlInitRaster(int width, int height, char bgChar) {
 }
 
 void ptlDisableRawMode(struct termios* t) {
-    if (tcsetattr(STDIN_FILENO, TCSAFLUSH, t) == -1) ptlDie("tcsetattr");
+    if (tcsetattr(STDIN_FILENO, TCSAFLUSH, t) == -1) ptlDie("tcsetattr, close this terminal window and open a new one");
 }
 
 
@@ -134,7 +134,10 @@ void ptlDestroyRaster(ptlRaster raster) {
 int ptlPressedKey(ptlRaster raster) {
     ptlRaster_UNIX* r = (ptlRaster_UNIX*)raster;
     int keyCode = '\0';
-    if (read(STDIN_FILENO, &keyCode, 1) == -1 && errno != EAGAIN) ptlDie("read");
+    if (read(STDIN_FILENO, &keyCode, 1) == -1 && errno != EAGAIN) {
+        ptlDisableRawMode(&(r->origTermios));
+        ptlDie("read");
+    }
     if (keyCode == '['){
         if (read(STDIN_FILENO, &keyCode, 1) == -1 && errno != EAGAIN) { ptlDie("read"); }
         if (keyCode == 'A') keyCode = KEYCODE_UP_ARROW;
@@ -150,7 +153,10 @@ void ptlDrawText(ptlRaster raster, int x, int y, char* text) {
     ptlRaster_UNIX* r = (ptlRaster_UNIX*)raster;
     
     for (int i = 0; text[i] != '\0'; i++) {
-        if (i >= r->width * r->height) ptlDie("index out of bounds when calling ptlDrawText()");
+        if (i >= r->width * r->height) {
+            ptlDisableRawMode(&(r->origTermios));
+            ptlDie("index out of bounds when calling ptlDrawText()");
+        }
         r->pixels[y * r->width + x + i] = text[i];
     }
 }
@@ -159,6 +165,8 @@ void ptlDrawPixel(ptlRaster raster, char pixelChar, int x, int y) {
     ptlRaster_UNIX* r = (ptlRaster_UNIX*)raster;
 
     if (x + y * r->width > r->width * r->height) {
+        ptlDisableRawMode(&(r->origTermios));
+        
         printf("y: %d\n", y);
         printf("x: %d", x);
 
@@ -171,8 +179,10 @@ void ptlDrawPixel(ptlRaster raster, char pixelChar, int x, int y) {
 void ptlRemovePixel(ptlRaster raster, int x, int y) {
     
     ptlRaster_UNIX* r = (ptlRaster_UNIX*)raster;
-    if (x + y * r->width >= r->width * r->height)
+    if (x + y * r->width >= r->width * r->height){
+        ptlDisableRawMode(&(r->origTermios));
         ptlDie("index out of bounds when calling ptlRemovePixel()");
+    }
 
     r->pixels[y * r->width + x] = r->bgChar;
 }
@@ -183,8 +193,10 @@ void ptlDrawLine(ptlRaster raster, char pixelChar, int start_x, int start_y, int
     start_x--;
     end_y++;
     
-    if ((start_y * r->width + start_x > r->width * r->height) ||
-        (end_y * r->width + end_x > r->width * (r->height + 1))) ptlDie("index out of bounds when calling ptlDrawLine()");
+    if ((start_y * r->width + start_x > r->width * r->height) || (end_y * r->width + end_x > r->width * (r->height + 1))) {
+        ptlDisableRawMode(&(r->origTermios));
+        ptlDie("index out of bounds when calling ptlDrawLine()");
+    }
 
     int widthDif = start_x < end_x ? end_x - start_x : start_x - end_x;
     int heightDif = start_y < end_y ? end_y - start_y : start_y - end_y;
