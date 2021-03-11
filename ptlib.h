@@ -50,7 +50,6 @@ void ptlDie(const char* s) {
 
 
 #if defined(unix) || defined(__unix) || defined(__unix__) || defined(__APPLE__)
-// TODO: Implement the Unix implementation of the API
 
 #define CSI "\x1b["
 
