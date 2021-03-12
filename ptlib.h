@@ -119,7 +119,6 @@ void ptlEnableRawMode(struct termios* t) {
     raw.c_cc[VTIME] = 0;
 
     if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw) == -1) ptlDie("tcsetattr");
-
 }
 
 ptlRaster ptlInitRaster(int width, int height, char bgChar) {
@@ -144,7 +143,6 @@ ptlRaster ptlInitRaster(int width, int height, char bgChar) {
 void ptlDisableRawMode(struct termios* t) {
     if (tcsetattr(STDIN_FILENO, TCSAFLUSH, t) == -1) ptlDie("tcsetattr, close this terminal window and open a new one");
 }
-
 
 void ptlDestroyRaster(ptlRaster raster) {
     ptlRaster_UNIX* r = (ptlRaster_UNIX*)raster;
@@ -286,7 +284,6 @@ void ptlRepaint(ptlRaster raster) {
         printf("\r\n");
         for (int j = 0; j < r->width; j++)
             printf("%c", r->pixels[i * r->width + j]);
-
     }
 
     printf("\r\n");
@@ -320,8 +317,6 @@ typedef struct ptlRaster_Win32 {
     char bgChar;
     char* pixels;
 } ptlRaster_Win32;
-
-
 
 ptlRaster ptlInitRaster(int width, int height, char bgChar) {
     ptlRaster_Win32* r = malloc(sizeof(ptlRaster_Win32));
@@ -386,11 +381,8 @@ void ptlDrawPixel(ptlRaster raster, char pixelChar, int x, int y) {
         ptlDie("index out of bounds when calling ptlDrawPixel()");
     }
 
-    
-    
     r->pixels[y * r->width + x] = pixelChar;
 }
-
 
 void ptlRemovePixel(ptlRaster raster, int x, int y) {
     ptlRaster_Win32* r = (ptlRaster_Win32*)raster;
@@ -400,8 +392,6 @@ void ptlRemovePixel(ptlRaster raster, int x, int y) {
     r->pixels[y * r->width + x] = r->bgChar;
 }
 
-
-
 void ptlDrawLine(ptlRaster raster, char pixelChar, int start_x, int start_y, int end_x, int end_y) {
     ptlRaster_Win32* r = (ptlRaster_Win32*)raster;
     
@@ -410,9 +400,6 @@ void ptlDrawLine(ptlRaster raster, char pixelChar, int start_x, int start_y, int
     
     if ((start_y * r->width + start_x > r->width * r->height) ||
         (end_y * r->width + end_x > r->width * (r->height + 1))) ptlDie("index out of bounds when calling ptlDrawLine()");
-
-
-
 
     int widthDif = start_x < end_x ? end_x - start_x : start_x - end_x;
     int heightDif = start_y < end_y ? end_y - start_y : start_y - end_y;
@@ -458,8 +445,6 @@ void ptlDrawLine(ptlRaster raster, char pixelChar, int start_x, int start_y, int
         }
     }
 }
-
-
 
 void ptlDrawRect(ptlRaster raster, char pixelChar, int width, int height, int x, int y) {
     ptlDrawLine(raster, pixelChar, x, y, x + width - 1, y);
