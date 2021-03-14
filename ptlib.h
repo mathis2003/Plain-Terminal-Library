@@ -310,6 +310,12 @@ int ptlGetHeight(ptlRaster raster) {
 #if defined(_WIN32)
 #include <Windows.h>
 
+
+#if defined(_WIN32)
+#define CLEAR_SCREEN system("CLS")
+#define CAST_RASTER(r, raster) ptlRaster_Win32* r = (ptlRaster_Win32*)raster
+#include <Windows.h>
+
 typedef struct ptlRaster_Win32 {
     DWORD original_mode;
     HANDLE in, out;
@@ -317,6 +323,9 @@ typedef struct ptlRaster_Win32 {
     char bgChar;
     char* pixels;
 } ptlRaster_Win32;
+
+
+/* --raster windows-- */
 
 ptlRaster ptlInitRaster(int width, int height, char bgChar) {
     ptlRaster_Win32* r = malloc(sizeof(ptlRaster_Win32));
@@ -354,104 +363,16 @@ void ptlClearScreen(ptlRaster raster) {
 void ptlDestroyRaster(ptlRaster raster) {
     ptlRaster_Win32* r = (ptlRaster_Win32*)raster;
     SetConsoleMode(r->out, r->original_mode);
-    
+
     CLEAR_SCREEN;
     SHOW_CURSOR;
-    
+
     free(r->pixels);
     free(r);
 }
 
-void ptlDrawText(ptlRaster raster, int x, int y, char* text) {
-    ptlRaster_Win32* r = (ptlRaster_Win32*)raster;
 
-    for (int i = 0; text[i] != '\0'; i++) {
-        if (i >= r->width * r->height) ptlDie("index out of bounds when calling ptlDrawText()");
-        r->pixels[y * r->width + x + i] = text[i];
-    }
-}
-
-void ptlDrawPixel(ptlRaster raster, char pixelChar, int x, int y) {
-    ptlRaster_Win32* r = (ptlRaster_Win32*)raster;
-    
-    if (x + y * r->width > r->width * r->height) {
-        printf("y: %d\n", y);
-        printf("x: %d", x);
-
-        ptlDie("index out of bounds when calling ptlDrawPixel()");
-    }
-
-    r->pixels[y * r->width + x] = pixelChar;
-}
-
-void ptlRemovePixel(ptlRaster raster, int x, int y) {
-    ptlRaster_Win32* r = (ptlRaster_Win32*)raster;
-    if (x + y * r->width >= r->width * r->height)
-        ptlDie("index out of bounds when calling ptlRemovePixel()");
-
-    r->pixels[y * r->width + x] = r->bgChar;
-}
-
-void ptlDrawLine(ptlRaster raster, char pixelChar, int start_x, int start_y, int end_x, int end_y) {
-    ptlRaster_Win32* r = (ptlRaster_Win32*)raster;
-    
-    start_x--;
-    end_y++;
-    
-    if ((start_y * r->width + start_x > r->width * r->height) ||
-        (end_y * r->width + end_x > r->width * (r->height + 1))) ptlDie("index out of bounds when calling ptlDrawLine()");
-
-    int widthDif = start_x < end_x ? end_x - start_x : start_x - end_x;
-    int heightDif = start_y < end_y ? end_y - start_y : start_y - end_y;
-
-    if (!widthDif) {
-        for (int i = 0; i < heightDif; i++)
-            ptlDrawPixel(raster, pixelChar, start_x, start_y + i);
-        return;
-    } else if (!heightDif) {
-        for (int i = 0; i < widthDif; i++)
-            ptlDrawPixel(raster, pixelChar, start_x + i, start_y);
-        return;
-    }
-
-    if (heightDif < widthDif) {
-
-        int extra_pixel_amount = widthDif % heightDif;
-
-        int x_offset = 0;
-        for (int y_offset = 0; y_offset < heightDif; y_offset++) {
-            for (int i = 0; i < (int)(widthDif / heightDif); i++) {
-                x_offset++;
-                ptlDrawPixel(raster, pixelChar, start_x + x_offset, start_y + y_offset);
-            }
-            if (y_offset < extra_pixel_amount) {
-                x_offset++;
-                ptlDrawPixel(raster, pixelChar, start_x + x_offset, start_y + y_offset);
-            }
-        }
-    } else {
-        int extra_pixel_amount = heightDif % widthDif;
-
-        int y_offset = 0;
-        for (int x_offset = 0; x_offset < widthDif; x_offset++) {
-            for (int i = 0; i < (int)(heightDif / widthDif); i++) {
-                y_offset++;
-                ptlDrawPixel(raster, pixelChar, start_x + x_offset, start_y + y_offset);
-            }
-            if (x_offset < extra_pixel_amount) {
-                y_offset++;
-                ptlDrawPixel(raster, pixelChar, start_x + x_offset, start_y + y_offset);
-            }
-        }
-    }
-}
-
-void ptlDrawRect(ptlRaster raster, char pixelChar, int width, int height, int x, int y) {
-    ptlDrawLine(raster, pixelChar, x, y, x + width - 1, y);
-    ptlDrawLine(raster, pixelChar, x + 1, y, x + 1, y + height - 2);
-    ptlDrawLine(raster, pixelChar, x + width, y, x + width, y + height - 2);
-    ptlDrawLine(raster, pixelChar, x, y + height - 1, x + width - 1, y + height - 1);
-}
+/* --input windows-- */
 
 int ptlPressedKey(ptlRaster raster) {
     ptlRaster_Win32* r = (ptlRaster_Win32*)raster;
@@ -490,7 +411,6 @@ int ptlPressedKey(ptlRaster raster) {
         }
         FlushConsoleInputBuffer(r->in);
     }
-
     return pressed;
 }
 
@@ -506,13 +426,113 @@ void ptlRepaint(ptlRaster raster) {
     }
 }
 
+#endif
+
+
+
+
+
+/* GRAPHICS DRAWING FUNCTIONS */
+
+
+void ptlDrawText(ptlRaster raster, int x, int y, char* text) {
+    CAST_RASTER(r, raster);
+
+    for (int i = 0; text[i] != '\0'; i++) {
+        if (i >= r->width * r->height) ptlDie("index out of bounds when calling ptlDrawText()");
+        r->pixels[y * r->width + x + i] = text[i];
+    }
+}
+
+void ptlDrawPixel(ptlRaster raster, char pixelChar, int x, int y) {
+    CAST_RASTER(r, raster);
+
+    if (x + y * r->width > r->width * r->height) {
+        printf("y: %d\n", y);
+        printf("x: %d", x);
+
+        ptlDie("index out of bounds when calling ptlDrawPixel()");
+    }
+    r->pixels[y * r->width + x] = pixelChar;
+}
+
+void ptlRemovePixel(ptlRaster raster, int x, int y) {
+    CAST_RASTER(r, raster);
+
+    if (x + y * r->width >= r->width * r->height)
+        ptlDie("index out of bounds when calling ptlRemovePixel()");
+
+    r->pixels[y * r->width + x] = r->bgChar;
+}
+
+void ptlDrawLine(ptlRaster raster, char pixelChar, int start_x, int start_y, int end_x, int end_y) {
+    CAST_RASTER(r, raster);
+
+    start_x--;
+    end_y++;
+
+    if ((start_y * r->width + start_x > r->width * r->height) ||
+        (end_y * r->width + end_x > r->width * (r->height + 1))) ptlDie("index out of bounds when calling ptlDrawLine()");
+
+    int widthDif = start_x < end_x ? end_x - start_x : start_x - end_x;
+    int heightDif = start_y < end_y ? end_y - start_y : start_y - end_y;
+
+    if (!widthDif) {
+        for (int i = 0; i < heightDif; i++)
+            ptlDrawPixel(raster, pixelChar, start_x, start_y + i);
+        return;
+    } else if (!heightDif) {
+        for (int i = 0; i < widthDif; i++)
+            ptlDrawPixel(raster, pixelChar, start_x + i, start_y);
+        return;
+    }
+
+    if (heightDif < widthDif) {
+
+        int extra_pixel_amount = widthDif % heightDif;
+        int x_offset = 0;
+
+        for (int y_offset = 0; y_offset < heightDif; y_offset++) {
+            for (int i = 0; i < (int)(widthDif / heightDif); i++) {
+                x_offset++;
+                ptlDrawPixel(raster, pixelChar, start_x + x_offset, start_y + y_offset);
+            }
+            if (y_offset < extra_pixel_amount) {
+                x_offset++;
+                ptlDrawPixel(raster, pixelChar, start_x + x_offset, start_y + y_offset);
+            }
+        }
+    } else {
+        int extra_pixel_amount = heightDif % widthDif;
+
+        int y_offset = 0;
+        for (int x_offset = 0; x_offset < widthDif; x_offset++) {
+            for (int i = 0; i < (int)(heightDif / widthDif); i++) {
+                y_offset++;
+                ptlDrawPixel(raster, pixelChar, start_x + x_offset, start_y + y_offset);
+            }
+            if (x_offset < extra_pixel_amount) {
+                y_offset++;
+                ptlDrawPixel(raster, pixelChar, start_x + x_offset, start_y + y_offset);
+            }
+        }
+    }
+}
+
+void ptlDrawRect(ptlRaster raster, char pixelChar, int width, int height, int x, int y) {
+    ptlDrawLine(raster, pixelChar, x, y, x + width - 1, y);
+    ptlDrawLine(raster, pixelChar, x + 1, y, x + 1, y + height - 2);
+    ptlDrawLine(raster, pixelChar, x + width, y, x + width, y + height - 2);
+    ptlDrawLine(raster, pixelChar, x, y + height - 1, x + width - 1, y + height - 1);
+}
+
 int ptlGetWidth(ptlRaster raster) {
-    ptlRaster_Win32* r = (ptlRaster_Win32*)raster;
+    CAST_RASTER(r, raster);
     return r->width;
 }
 
 int ptlGetHeight(ptlRaster raster) {
-    ptlRaster_Win32* r = (ptlRaster_Win32*)raster;
+    CAST_RASTER(r, raster);
     return r->height;
 }
 
