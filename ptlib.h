@@ -1,4 +1,3 @@
-
 /*
  * MIT License
  *
@@ -30,6 +29,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
 #define HIDE_CURSOR printf("\x1b[?25l")
 #define SHOW_CURSOR printf("\x1b[?25h")
@@ -82,7 +82,6 @@ void ptlDie(const char* s) {
 
 /* ----defines---- */
 #define CLEAR_SCREEN system("clear")
-#define HIDE_CURSOR printf("\x1b[?25l")
 
 /* ----includes---- */
 
@@ -141,6 +140,7 @@ ptlRaster ptlInitRaster(int width, int height, char bgChar) {
 }
 
 void ptlDisableRawMode(struct termios* t) {
+    SHOW_CURSOR;
     if (tcsetattr(STDIN_FILENO, TCSAFLUSH, t) == -1) ptlDie("tcsetattr, close this terminal window and open a new one");
 }
 
@@ -216,57 +216,54 @@ void ptlRemovePixel(ptlRaster raster, int x, int y) {
 void ptlDrawLine(ptlRaster raster, char pixelChar, int start_x, int start_y, int end_x, int end_y) {
     ptlRaster_UNIX* r = (ptlRaster_UNIX*)raster;
     
-    start_x--;
-    end_y++;
+    // make sure start coordinates are coordinates of the left point, if not, change the coordinates
+    if (start_x > end_x) {
+        int temp_x = start_x, temp_y = start_y;
+        start_x = end_x;
+        end_x = temp_x;
+        start_y = end_y;
+        end_y = temp_y;
+    }
     
-    if ((start_y * r->width + start_x > r->width * r->height) || (end_y * r->width + end_x > r->width * (r->height + 1))) {
-        ptlDisableRawMode(&(r->origTermios));
-        ptlDie("index out of bounds when calling ptlDrawLine()");
-    }
-
-    int widthDif = start_x < end_x ? end_x - start_x : start_x - end_x;
-    int heightDif = start_y < end_y ? end_y - start_y : start_y - end_y;
-
-    if (!widthDif) {
-        for (int i = 0; i < heightDif; i++)
-            ptlDrawPixel(raster, pixelChar, start_x, start_y + i);
-        return;
-    } else if (!heightDif) {
-        for (int i = 0; i < widthDif; i++)
-            ptlDrawPixel(raster, pixelChar, start_x + i, start_y);
-        return;
-    }
-
-    if (heightDif < widthDif) {
-
-        int extra_pixel_amount = widthDif % heightDif;
-
-        int x_offset = 0;
-        for (int y_offset = 0; y_offset < heightDif; y_offset++) {
-            for (int i = 0; i < (int)(widthDif / heightDif); i++) {
-                x_offset++;
-                ptlDrawPixel(raster, pixelChar, start_x + x_offset, start_y + y_offset);
-            }
-            if (y_offset < extra_pixel_amount) {
-                x_offset++;
-                ptlDrawPixel(raster, pixelChar, start_x + x_offset, start_y + y_offset);
-            }
+    int delta_x = end_x - start_x, delta_y = end_y - start_y;
+    // check for edge cases such as a vertical line, a horizontal line or a single point
+    
+    if (delta_x == 0 && delta_y == 0){
+        //draw a single point
+        ptlDrawPixel(raster, pixelChar, start_x, start_y);
+    } else if (delta_x == 0){
+        //draw a vertical line
+        int step = (start_y < end_y ? 1 : -1);
+        for (int y = start_y; y != end_y; y += step) {
+            ptlDrawPixel(raster, pixelChar, start_x, y);
+        }
+    } else if (delta_y == 0){
+        //draw a horizontal line
+        for (int x = start_x; x != end_x; x++) {
+            ptlDrawPixel(raster, pixelChar, x, start_y);
         }
     } else {
-        int extra_pixel_amount = heightDif % widthDif;
-
-        int y_offset = 0;
-        for (int x_offset = 0; x_offset < widthDif; x_offset++) {
-            for (int i = 0; i < (int)(heightDif / widthDif); i++) {
-                y_offset++;
-                ptlDrawPixel(raster, pixelChar, start_x + x_offset, start_y + y_offset);
+        // draw a slope line
+        float slope = ((float) delta_y) / ((float) delta_x);
+        float step;
+        int prev_y = 0;
+        
+        if (slope > 0) {
+            step = (slope > 1 ? 1/slope : slope);
+            for (float x = start_x; x < end_x; x += step) {
+                int y = (int)(slope * x) > prev_y ? (prev_y += 1) : prev_y;
+                ptlDrawPixel(raster, pixelChar, (int)x, start_y + y);
             }
-            if (x_offset < extra_pixel_amount) {
-                y_offset++;
-                ptlDrawPixel(raster, pixelChar, start_x + x_offset, start_y + y_offset);
+        } else {
+            step = (slope < -1 ? 1/slope : slope);
+            for (float x = start_x; x < end_x; x += step * -1) {
+                int y = (int)(slope * x) < prev_y ? (prev_y -= 1) : prev_y;
+                ptlDrawPixel(raster, pixelChar, (int)x, start_y + y);
             }
         }
+        
     }
+    
 }
 
 void ptlDrawRect(ptlRaster raster, char pixelChar, int width, int height, int x, int y) {
@@ -313,7 +310,6 @@ int ptlGetHeight(ptlRaster raster) {
 
 #if defined(_WIN32)
 #define CLEAR_SCREEN system("CLS")
-#define CAST_RASTER(r, raster) ptlRaster_Win32* r = (ptlRaster_Win32*)raster
 #include <Windows.h>
 
 typedef struct ptlRaster_Win32 {
@@ -436,7 +432,7 @@ void ptlRepaint(ptlRaster raster) {
 
 
 void ptlDrawText(ptlRaster raster, int x, int y, char* text) {
-    CAST_RASTER(r, raster);
+    ptlRaster_Win32* r = (ptlRaster_Win32*)raster;
 
     for (int i = 0; text[i] != '\0'; i++) {
         if (i >= r->width * r->height) ptlDie("index out of bounds when calling ptlDrawText()");
@@ -445,7 +441,7 @@ void ptlDrawText(ptlRaster raster, int x, int y, char* text) {
 }
 
 void ptlDrawPixel(ptlRaster raster, char pixelChar, int x, int y) {
-    CAST_RASTER(r, raster);
+    ptlRaster_Win32* r = (ptlRaster_Win32*)raster;
 
     if (x + y * r->width > r->width * r->height) {
         printf("y: %d\n", y);
@@ -457,7 +453,7 @@ void ptlDrawPixel(ptlRaster raster, char pixelChar, int x, int y) {
 }
 
 void ptlRemovePixel(ptlRaster raster, int x, int y) {
-    CAST_RASTER(r, raster);
+    ptlRaster_Win32* r = (ptlRaster_Win32*)raster;
 
     if (x + y * r->width >= r->width * r->height)
         ptlDie("index out of bounds when calling ptlRemovePixel()");
@@ -466,57 +462,55 @@ void ptlRemovePixel(ptlRaster raster, int x, int y) {
 }
 
 void ptlDrawLine(ptlRaster raster, char pixelChar, int start_x, int start_y, int end_x, int end_y) {
-    CAST_RASTER(r, raster);
-
-    start_x--;
-    end_y++;
-
-    if ((start_y * r->width + start_x > r->width * r->height) ||
-        (end_y * r->width + end_x > r->width * (r->height + 1))) ptlDie("index out of bounds when calling ptlDrawLine()");
-
-    int widthDif = start_x < end_x ? end_x - start_x : start_x - end_x;
-    int heightDif = start_y < end_y ? end_y - start_y : start_y - end_y;
-
-    if (!widthDif) {
-        for (int i = 0; i < heightDif; i++)
-            ptlDrawPixel(raster, pixelChar, start_x, start_y + i);
-        return;
-    } else if (!heightDif) {
-        for (int i = 0; i < widthDif; i++)
-            ptlDrawPixel(raster, pixelChar, start_x + i, start_y);
-        return;
+    ptlRaster_Win32* r = (ptlRaster_Win32*)raster;
+    
+    // make sure start coordinates are coordinates of the left point, if not, change the coordinates
+    if (start_x > end_x) {
+        int temp_x = start_x, temp_y = start_y;
+        start_x = end_x;
+        end_x = temp_x;
+        start_y = end_y;
+        end_y = temp_y;
     }
-
-    if (heightDif < widthDif) {
-
-        int extra_pixel_amount = widthDif % heightDif;
-        int x_offset = 0;
-
-        for (int y_offset = 0; y_offset < heightDif; y_offset++) {
-            for (int i = 0; i < (int)(widthDif / heightDif); i++) {
-                x_offset++;
-                ptlDrawPixel(raster, pixelChar, start_x + x_offset, start_y + y_offset);
-            }
-            if (y_offset < extra_pixel_amount) {
-                x_offset++;
-                ptlDrawPixel(raster, pixelChar, start_x + x_offset, start_y + y_offset);
-            }
+    
+    int delta_x = end_x - start_x, delta_y = end_y - start_y;
+    // check for edge cases such as a vertical line, a horizontal line or a single point
+    
+    if (delta_x == 0 && delta_y == 0){
+        //draw a single point
+        ptlDrawPixel(raster, pixelChar, start_x, start_y);
+    } else if (delta_x == 0){
+        //draw a vertical line
+        int step = (start_y < end_y ? 1 : -1);
+        for (int y = start_y; y != end_y; y += step) {
+            ptlDrawPixel(raster, pixelChar, start_x, y);
+        }
+    } else if (delta_y == 0){
+        //draw a horizontal line
+        for (int x = start_x; x != end_x; x++) {
+            ptlDrawPixel(raster, pixelChar, x, start_y);
         }
     } else {
-        int extra_pixel_amount = heightDif % widthDif;
-
-        int y_offset = 0;
-        for (int x_offset = 0; x_offset < widthDif; x_offset++) {
-            for (int i = 0; i < (int)(heightDif / widthDif); i++) {
-                y_offset++;
-                ptlDrawPixel(raster, pixelChar, start_x + x_offset, start_y + y_offset);
+        // draw a slope line
+        float slope = ((float) delta_y) / ((float) delta_x);
+        float step;
+        int prev_y = 0;
+        
+        if (slope > 0) {
+            step = (slope > 1 ? 1/slope : slope);
+            for (float x = start_x; x < end_x; x += step) {
+                int y = (int)(slope * x) > prev_y ? (prev_y += 1) : prev_y;
+                ptlDrawPixel(raster, pixelChar, (int)x, start_y + y);
             }
-            if (x_offset < extra_pixel_amount) {
-                y_offset++;
-                ptlDrawPixel(raster, pixelChar, start_x + x_offset, start_y + y_offset);
+        } else {
+            step = (slope < -1 ? 1/slope : slope);
+            for (float x = start_x; x < end_x; x += step * -1) {
+                int y = (int)(slope * x) < prev_y ? (prev_y -= 1) : prev_y;
+                ptlDrawPixel(raster, pixelChar, (int)x, start_y + y);
             }
         }
     }
+    
 }
 
 void ptlDrawRect(ptlRaster raster, char pixelChar, int width, int height, int x, int y) {
@@ -527,12 +521,12 @@ void ptlDrawRect(ptlRaster raster, char pixelChar, int width, int height, int x,
 }
 
 int ptlGetWidth(ptlRaster raster) {
-    CAST_RASTER(r, raster);
+    ptlRaster_Win32* r = (ptlRaster_Win32*)raster;
     return r->width;
 }
 
 int ptlGetHeight(ptlRaster raster) {
-    CAST_RASTER(r, raster);
+    ptlRaster_Win32* r = (ptlRaster_Win32*)raster;
     return r->height;
 }
 
