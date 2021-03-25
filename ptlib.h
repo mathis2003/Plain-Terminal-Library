@@ -289,7 +289,7 @@ void ptlRepaint(ptlRaster raster) {
 
 char ptlGetPixelChar(ptlRaster raster, int x, int y) {
     ptlRaster_UNIX* r = (ptlRaster_UNIX*)raster;
-    return r->pixels[(r->width * y + r->height)];
+    return r->pixels[(r->width * y + x)];
 }
 
 int ptlGetWidth(ptlRaster raster) {
@@ -527,7 +527,7 @@ void ptlDrawRect(ptlRaster raster, char pixelChar, int width, int height, int x,
 
 char ptlGetPixelChar(ptlRaster raster, int x, int y) {
     ptlRaster_Win32* r = (ptlRaster_Win32*)raster;
-    return r->pixels[(r->width * y + r->height)];
+    return r->pixels[(r->width * y + x)];
 }
 
 int ptlGetWidth(ptlRaster raster) {
